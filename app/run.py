@@ -48,6 +48,7 @@ def index():
     
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
+    # Added graph for showing count of messages in each category
     graphs = [
         {
             'data': [
