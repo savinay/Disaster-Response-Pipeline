@@ -13,8 +13,12 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.metrics import precision_score, recall_score, f1_score
 from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GridSearchCV
+
 
 def load_data(database_filepath):
+    '''Loads data from the database given. 
+       Returns the input variables, output variables and the category names'''
     engine = create_engine('sqlite:///' + database_filepath)
     df = pd.read_sql('select * from messages', engine)
     X = df['message']
@@ -24,6 +28,10 @@ def load_data(database_filepath):
     return X, y, category_names
 
 def tokenize(text):
+    '''
+    Removes whitespaces, reduces each word to its base form, converts to lowercase and return an array of each word
+    in a message
+    '''
     text = re.sub(r'[^\w\s]','',text)
     tokens = word_tokenize(text)
     lemmatizer = WordNetLemmatizer()
@@ -37,17 +45,23 @@ def tokenize(text):
 
 
 def build_model():
+    '''Builds a machine learning pipeline to train. Uses Grid Search to find the best parameters.'''
     pipeline = Pipeline([
             ('vect', CountVectorizer(tokenizer=tokenize)),
             ('tfidf', TfidfTransformer()),
             ('clf', MultiOutputClassifier(AdaBoostClassifier()))
         ])
-#     from sklearn.model_selection import train_test_split
-#     X_train, X_test, y_train, y_test = train_test_split(X, y)
-#     pipeline.fit(X_train, y_train)
-    return pipeline
+    parameters = {
+            'vect__ngram_range': ((1, 1), (1, 2)),
+            'vect__max_df': (0.5, 0.75, 1.0),
+            'tfidf__use_idf': (True, False)
+        }
+
+    cv = GridSearchCV(pipeline, param_grid=parameters, verbose=2, n_jobs=-1)
+    return cv
 
 def evaluate_model(model, X_test, Y_test, category_names):
+    '''Calculates the precision, recall and f1-score for each of the category names'''
     y_pred = model.predict(X_test)
     y_pred_df = pd.DataFrame(y_pred, columns=category_names)
     evaluation = {}
@@ -60,6 +74,7 @@ def evaluate_model(model, X_test, Y_test, category_names):
 
 
 def save_model(model, model_filepath):
+    '''Saves the model to a pickle file'''
     pickle.dump(model, open(model_filepath, 'wb'))
 
 

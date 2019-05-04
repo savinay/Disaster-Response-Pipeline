@@ -26,11 +26,11 @@ def tokenize(text):
     return clean_tokens
 
 # load data
-engine = create_engine('sqlite:///data/DisasterResponse.db')
+engine = create_engine('sqlite:///../data/DisasterResponse.db')
 df = pd.read_sql_table('messages', engine)
 
 # load model
-model = joblib.load("models/classifier.pkl")
+model = joblib.load("../models/classifier.pkl")
 
 
 # index webpage displays cool visuals and receives user input text for model
@@ -46,9 +46,11 @@ def index():
     label_counts = df.astype(bool).sum(axis=0).iloc[4:]
     label_names = list(df.astype(bool).sum(axis=0).iloc[4:].index)
     
+    msg_length = df['message'].str.len()
+    msg_ids = [i for i in range(len(df))]
+    
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
-    # Added graph for showing count of messages in each category
     graphs = [
         {
             'data': [
@@ -83,6 +85,24 @@ def index():
                 },
                 'xaxis': {
                     'title': "Category"
+                }
+            }
+        },
+        {
+            'data': [
+                Bar(
+                    x=msg_ids,
+                    y=msg_length
+                )
+            ],
+
+            'layout': {
+                'title': 'Length of each message',
+                'yaxis': {
+                    'title': "Length"
+                },
+                'xaxis': {
+                    'title': "ID"
                 }
             }
         }

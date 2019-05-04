@@ -3,6 +3,7 @@ import pandas as pd
 from sqlalchemy import *
 
 def load_data(messages_filepath, categories_filepath):
+    '''Merges the data from messages and categories csv files on id and returns a dataframe'''
     messages = pd.read_csv(messages_filepath)
     categories = pd.read_csv(categories_filepath)
     df = pd.merge(messages, categories, on='id', how='outer')
@@ -10,6 +11,11 @@ def load_data(messages_filepath, categories_filepath):
 
 
 def clean_data(df):
+    '''Splits categories into separate category columns. 
+       Converts category values to just numbers 0 or 1.
+       Replaces categories column in df with new category columns.
+       Removes duplicates
+    '''
     categories = df['categories'].str.split(";", expand=True)
     row = categories.iloc[0]
     category_colnames = list(map(lambda x: x.split("-")[0], categories.iloc[0].values.tolist()))
@@ -28,6 +34,7 @@ def clean_data(df):
 
 
 def save_data(df, database_filename):
+    '''Saves the cleaned dataframe to a table messages in the database given'''
     engine = create_engine('sqlite:///'+ database_filename)
     df.to_sql('messages', engine, index=False)  
 
